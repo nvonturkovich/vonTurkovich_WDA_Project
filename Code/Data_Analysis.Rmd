@@ -1,0 +1,279 @@
+---
+title: "Data_Analysis"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+getwd()
+
+library(tidyverse)
+library(lubridate)
+library(dataRetrieval)
+library(cowplot)
+library(trend)
+library(forecast)
+library(tseries)
+
+
+theme_set(theme_classic())
+options(scipen = 4) #sets the number of decimal places that appear in output
+```
+
+
+```{r read in data}
+LOBATOS_processed<-read.csv("../Data/Processed/LOBATOS_processed.csv")
+LOBATOS_long<-read.csv("../Data/Processed/LOBATOS_long.csv")
+LOBATOSFlow_summary<-read.csv("../Data/Processed/LOBATOSFlow_summary.csv")
+
+OTOWI_processed<-read.csv("../Data/Processed/OTOWI_processed.csv")
+OTOWI_long<-read.csv("../Data/Processed/OTOWI_long.csv")
+OTOWIFlow_summary<-read.csv("../Data/Processed/OTOWIFlow_summary.csv")
+```
+
+```{r}
+
+LOBATOS_processed$Date<-ymd(LOBATOS_processed$Date)
+OTOWI_processed$Date<-ymd(OTOWI_processed$Date)
+
+LOBATOS_processed<- LOBATOS_processed%>% 
+  filter(Year>2007)
+
+LOBATOS_pre<- LOBATOS_processed%>% 
+  filter(Year<2014)
+
+LOBATOS_post<- LOBATOS_processed%>% 
+  filter(Year>2014)
+
+OTOWI_processed<- OTOWI_processed%>% 
+  filter(Year>2007)
+
+OTOWI_pre<- OTOWI_processed%>% 
+  filter(Year<2014)
+
+OTOWI_post<- OTOWI_processed%>% 
+  filter(Year>2014)
+```
+
+```{r looking at stream gauge data over time}
+#2014-2021
+ggplot(LOBATOS_processed, aes(x = Date, y = Phosphorus_mg.L)) +
+  geom_point() +
+  geom_line(aes(x=Date, y=Discharge_cfs))+
+  #geom_hline(yintercept = 200, lty = 2) + #EPA ____recreational criteria for freshwater
+  scale_y_log10() +
+  labs(x = "Date", y = "Phosphorus mg/L)")+
+    geom_smooth(method = "lm", se = FALSE, color = "black") 
+
+ggplot(LOBATOS_processed, aes(x=Date, y=Discharge_cfs)) +
+  geom_line()+
+  scale_y_log10() +
+  labs(x = "Date", y = "Discharge cfs")+
+    geom_smooth(method = "lm", se = FALSE, color = "black") 
+
+ggplot(OTOWI_processed, aes(x = Date, y = SuspendedSedimentConcentration_mg.L)) +
+  geom_point() +
+  scale_y_log10() +
+    geom_smooth(method = "lm", se = FALSE, color = "black") +
+  labs(x = "Date", y = expression("Suspended Sediment Concentration mg/L"))+
+  scale_x_date(name = 'My date axis title', date_breaks = '1 years',
+        date_labels = '%Y')
+
+ggplot(OTOWI_processed, aes(x=Date, y=Discharge_cfs)) +
+  geom_line()+
+  scale_y_log10() +
+  labs(x = "Date", y = "Discharge cfs")+
+    geom_smooth(method = "lm", se = FALSE, color = "black") 
+
+#2007-2014
+ggplot(LOBATOS_pre, aes(x = Date, y = Phosphorus_mg.L)) +
+  geom_point() +
+  #geom_hline(yintercept = 200, lty = 2) + #EPA ____recreational criteria for freshwater
+  scale_y_log10() +
+  labs(x = "Date", y = "Phosphorus mg/L)")+
+    geom_smooth(method = "lm", se = FALSE, color = "black") 
+
+ggplot(LOBATOS_pre, aes(x=Date, y=Discharge_cfs)) +
+  geom_line()+
+  scale_y_log10() +
+  labs(x = "Date", y = "Discharge cfs")+
+    geom_smooth(method = "lm", se = FALSE, color = "black") 
+
+ggplot(OTOWI_pre, aes(x = Date, y = SuspendedSedimentConcentration_mg.L)) +
+  geom_point() +
+  scale_y_log10() +
+  labs(x = "Date", y = expression("Suspended Sediment Concentration mg/L"))+
+  scale_x_date(name = 'My date axis title', date_breaks = '1 years',
+        date_labels = '%Y')+
+  geom_smooth(method = "lm", se = FALSE, color = "black")
+
+ggplot(OTOWI_pre, aes(x=Date, y=Discharge_cfs)) +
+  geom_line()+
+  scale_y_log10() +
+  labs(x = "Date", y = "Discharge cfs") +
+    geom_smooth(method = "lm", se = FALSE, color = "black") 
+
+#2014-2021
+ggplot(LOBATOS_post, aes(x = Date, y = Phosphorus_mg.L)) +
+  geom_point() +
+  #geom_hline(yintercept = 200, lty = 2) + #EPA ____recreational criteria for freshwater
+  scale_y_log10() +
+    geom_smooth(method = "lm", se = FALSE, color = "black") +
+  labs(x = "Date", y = "Phosphorus mg/L)")
+
+ggplot(LOBATOS_post, aes(x=Date, y=Discharge_cfs)) +
+  geom_line()+
+  scale_y_log10() +
+  labs(x = "Date", y = "Discharge cfs")+
+    geom_smooth(method = "lm", se = FALSE, color = "black") 
+
+ggplot(OTOWI_post, aes(x = Date, y = SuspendedSedimentConcentration_mg.L)) +
+  geom_point() +
+  scale_y_log10() +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  labs(x = "Date", y = expression("Suspended Sediment Concentration mg/L"))+
+  scale_x_date(name = 'My date axis title', date_breaks = '1 years',
+        date_labels = '%Y')
+
+ggplot(OTOWI_post, aes(x=Date, y=Discharge_cfs)) +
+  geom_line()+
+  scale_y_log10() +
+  labs(x = "Date", y = "Discharge cfs")+
+    geom_smooth(method = "lm", se = FALSE, color = "black") 
+
+
+```
+
+
+What is the relationship between flow and the water quality indicators?
+
+```{r}
+ggplot(LOBATOSFlow_summary, aes(x = DOY)) +
+  geom_line(aes(y = median_Flow_cfs)) +
+  geom_point(data = LOBATOS_processed, aes(y = Phosphorus_mg.L), fill = "gray", alpha = 0.2) +
+  #geom_point(data = NeuseWQFlow_processed, aes(y = SpC_uS.cm)) +
+  scale_y_log10() +
+  labs(x = "Day of Year", y = "Flow (cfs)")
+
+ggplot(LOBATOS_processed, aes(x = Discharge_cfs, y = Phosphorus_mg.L)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(x = "Flow (cfs)", y = "Phosphorus mg/L)")
+
+summary(lm(data = LOBATOS_processed, log10(Phosphorus_mg.L) ~ log10(Discharge_cfs)))
+#signigicant neg slope of flow on phosphorus, R2= flow only explains 9% of phosphorus
+```
+
+```{r}
+ggplot(OTOWIFlow_summary, aes(x = DOY)) +
+  geom_line(aes(y = median_Flow_cfs)) +
+  geom_point(data = OTOWI_processed, aes(y = SuspendedSedimentConcentration_mg.L)) +
+  #geom_point(data = NeuseWQFlow_processed, aes(y = SpC_uS.cm)) +
+  scale_y_log10() +
+  labs(x = "Day of Year", y = "Flow (cfs)")
+
+ggplot(OTOWI_processed, aes(x = Discharge_cfs, y = SuspendedSedimentConcentration_mg.L)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(x = "Flow (cfs)", y = "Suspended Sediment Concentration mg/L") 
+
+summary(lm(data = OTOWI_processed, log10(SuspendedSedimentConcentration_mg.L) ~ log10(Discharge_cfs)))
+#sig slope of flow on conductivity, R2 flow only explains 8% of SuspendedSedimentConcentration
+```
+
+```{r OTOWI Time Series PRE}
+#discharge
+OTOWI_discharge_monthly_PRE <- OTOWI_pre %>%
+  mutate(Year = year(Date),
+         Month = month(Date)) %>%
+  group_by(Year, Month) %>%
+  summarise(Discharge_cfs = sum(Discharge_cfs)*1.98347) #acre feet per month
+
+OTOWI_discharge_timeseries_PRE <- ts(OTOWI_discharge_monthly_PRE$Discharge_cfs, frequency = 12,
+                           start = c(2007, 1, 1), end = c(2021, 12, 1))
+
+OTOWI_discharge_Decomposed_PRE <-stl(OTOWI_discharge_timeseries_Post, s.window = "periodic") 
+
+plot(OTOWI_discharge_Decomposed_PRE)
+
+#SS
+OTOWI_SS_monthly_PRE<- OTOWI_pre %>%
+  mutate(Year = year(Date),
+         Month = month(Date)) %>%
+  group_by(Year, Month) %>%
+  summarise(SuspendedSedimentConcentration_mg.L = max(SuspendedSedimentConcentration_mg.L)) #acre feet per month
+
+OTOWI_SS_timeseries_PRE <- ts(OTOWI_SS_monthly_Post$SuspendedSedimentConcentration_mg.L, frequency = 12,
+                           start = c(2007, 1, 1), end = c(2021, 12, 1))
+
+OTOWI_SS_Decomposed_PRE <-stl(OTOWI_SS_timeseries_PRE, s.window = "periodic") 
+
+
+plot(OTOWI_SS_Decomposed_PRE)
+
+#discharge
+# Run SMK test (seasonal man kendal)
+OTOWI_discharge_trend_PRE <- smk.test(OTOWI_discharge_timeseries_Post)
+
+# Inspect results
+OTOWI_discharge_trend_PRE
+summary(OTOWI_discharge_trend_PRE)
+
+#SS
+# Run SMK test (seasonal man kendal)
+OTOWI_SS_trend_PRE <- smk.test(OTOWI_SS_timeseries_PRE)
+
+# Inspect results
+OTOWI_SS_trend_PRE
+summary(OTOWI_SS_trend_PRE)
+```
+
+```{r OTOWI Time Series POST}
+#discharge
+OTOWI_discharge_monthly_Post <- OTOWI_post %>%
+  mutate(Year = year(Date),
+         Month = month(Date)) %>%
+  group_by(Year, Month) %>%
+  summarise(Discharge_cfs = sum(Discharge_cfs)*1.98347) #acre feet per month
+
+OTOWI_discharge_timeseries_Post <- ts(OTOWI_discharge_monthly_Post$Discharge_cfs, frequency = 12,
+                           start = c(2007, 1, 1), end = c(2021, 12, 1))
+
+OTOWI_discharge_Decomposed_Post <-stl(OTOWI_discharge_timeseries_Post, s.window = "periodic") 
+
+plot(OTOWI_discharge_Decomposed_Post)
+
+#SS
+OTOWI_SS_monthly_Post <- OTOWI_post %>%
+  mutate(Year = year(Date),
+         Month = month(Date)) %>%
+  group_by(Year, Month) %>%
+  summarise(SuspendedSedimentConcentration_mg.L = max(SuspendedSedimentConcentration_mg.L)) #acre feet per month
+
+OTOWI_SS_timeseries_Post <- ts(OTOWI_SS_monthly_Post$SuspendedSedimentConcentration_mg.L, frequency = 12,
+                           start = c(2007, 1, 1), end = c(2021, 12, 1))
+
+OTOWI_SS_Decomposed_Post <-stl(OTOWI_SS_timeseries_Post, s.window = "periodic") 
+
+
+plot(OTOWI_SS_Decomposed_Post)
+
+#discharge
+# Run SMK test (seasonal man kendal)
+OTOWI_discharge_trend_Post <- smk.test(OTOWI_discharge_timeseries_Post)
+
+# Inspect results
+OTOWI_discharge_trend_Post
+summary(OTOWI_discharge_trend_Post)
+
+#SS
+# Run SMK test (seasonal man kendal)
+OTOWI_SS_trend_Post <- smk.test(OTOWI_SS_timeseries_Post)
+
+# Inspect results
+OTOWI_SS_trend_Post
+summary(OTOWI_SS_trend_Post)
+```

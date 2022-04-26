@@ -1,0 +1,280 @@
+---
+title: "DataProcessing_Wrangling"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+getwd()
+
+library(tidyverse)
+library(lubridate)
+library(dataRetrieval)
+
+theme_set(theme_classic())
+options(scipen = 4) #sets the number of decimal places that appear in output
+
+#https://maps.waterdata.usgs.gov/mapper/index.html
+#LOBATOS https://waterdata.usgs.gov/nwis/inventory?agency_code=USGS&site_no=08251500 
+#OTOWI https://waterdata.usgs.gov/nwis/inventory?agency_code=USGS&site_no=08313000
+#COHIITI https://waterdata.usgs.gov/nwis/inventory?agency_code=USGS&site_no=08317400
+
+```
+
+```{r LOBATOS PH read in data and wrangle}
+rioParamsLobatos <- whatNWISdata(siteNumbers = "08251500")
+
+riogWQLobatosall <- readWQPqw(siteNumbers = "USGS-08251500", # RIO GRANDE NEAR LOBATOS, CO
+                     parameterCd = "",
+                     startDate = "1980-01-01",
+                     endDate = "")
+
+unique(riogWQLobatosall$CharacteristicName)
+
+as.numeric(riogWQLobatosall$ResultMeasureValue)
+
+riogWQLobatosall<-riogWQLobatosall %>% 
+  filter(ResultMeasure.MeasureUnitCode!="%")
+
+riogWQLobatos_SS<-riogWQLobatosall %>%
+  filter(CharacteristicName== "Suspended Sediment Concentration (SSC)" )
+
+riogWQLobatos_PH<-riogWQLobatosall %>%
+  filter(CharacteristicName== "Phosphorus" )
+
+riogWQLobatos_PH_wider<-riogWQLobatos_PH %>% 
+  select(ActivityStartDate, CharacteristicName, ResultMeasureValue) %>% 
+  group_by(ActivityStartDate, CharacteristicName)  %>% 
+  summarise(ResultMeasureValue=max(ResultMeasureValue)) %>% 
+  pivot_wider(names_from = CharacteristicName, values_from = ResultMeasureValue) %>% 
+  drop_na()%>% 
+  rename("Phosphorus_mg.L"="Phosphorus")
+  
+riogWQLobatos_SS_wider<-riogWQLobatos_SS %>% 
+  select(ActivityStartDate, CharacteristicName, ResultMeasureValue) %>% 
+  group_by(ActivityStartDate, CharacteristicName)  %>% 
+  summarise(ResultMeasureValue=max(ResultMeasureValue)) %>% 
+  pivot_wider(names_from = CharacteristicName, values_from = ResultMeasureValue) %>% 
+  drop_na()%>% 
+  rename("SuspendedSedimentConcentration_mg.L"="Suspended Sediment Concentration (SSC)")
+  
+riogWQLobatosall_both<-riogWQLobatosall %>%
+  filter(CharacteristicName=="Suspended Sediment Concentration (SSC)"|CharacteristicName=="Phosphorus")
+
+riogWQLobatosall_both_wider<-riogWQLobatosall_both %>% 
+  select(ActivityStartDate, CharacteristicName, ResultMeasureValue) %>% 
+  group_by(ActivityStartDate, CharacteristicName) %>% 
+  summarise(Value=max(ResultMeasureValue)) %>% 
+  pivot_wider(names_from = CharacteristicName, values_from = Value) %>% 
+  drop_na() %>% 
+  rename("Phosphorus_mg.L"="Phosphorus", "SuspendedSedimentConcentration_mg.L"="Suspended Sediment Concentration (SSC)")
+```
+
+
+```{r OTOWI SS read in data and wrangle}
+rioParamsOTOWI <- whatNWISdata(siteNumbers = "08313000")
+
+riogWQOTOWIall <- readWQPqw(siteNumbers = "USGS-08313000", # RIO GRANDE OTOWI BRIDGE, NM
+                     parameterCd = "",
+                     startDate = "1980-01-01",
+                     endDate = "")
+
+unique(riogWQOTOWIall$CharacteristicName)
+
+as.numeric(riogWQOTOWIall$ResultMeasureValue)
+
+riogWQOTOWIall<-riogWQOTOWIall %>% 
+  filter(ResultMeasure.MeasureUnitCode!="%")
+
+riogWQOTOWI_SS<-riogWQOTOWIall %>%
+  filter(CharacteristicName== "Suspended Sediment Concentration (SSC)" )
+
+riogWQOTOWI_PH<-riogWQOTOWIall %>%
+  filter(CharacteristicName== "Phosphorus" )
+
+riogWQOTOWI_SS_wider<-riogWQOTOWI_SS %>% 
+  select(ActivityStartDate, CharacteristicName, ResultMeasureValue) %>% 
+  group_by(ActivityStartDate, CharacteristicName) %>% 
+  summarise(ResultMeasureValue=max(ResultMeasureValue)) %>% 
+  pivot_wider(names_from = CharacteristicName, values_from = ResultMeasureValue) %>% 
+    drop_na() %>% 
+  rename("SuspendedSedimentConcentration_mg.L"="Suspended Sediment Concentration (SSC)")
+
+riogWQOTOWI_PH_wider<-riogWQOTOWI_PH %>% 
+  select(ActivityStartDate, CharacteristicName, ResultMeasureValue) %>% 
+  group_by(ActivityStartDate, CharacteristicName) %>% 
+  summarise(ResultMeasureValue=max(ResultMeasureValue)) %>% 
+  pivot_wider(names_from = CharacteristicName, values_from = ResultMeasureValue) %>% 
+    drop_na() %>% 
+  rename("Phosphorus_mg.L"="Phosphorus")
+
+riogWQOTOWI_both<-riogWQOTOWIall %>%
+  filter(CharacteristicName=="Suspended Sediment Concentration (SSC)"|CharacteristicName=="Phosphorus")
+
+riogWQOTOWI_both_wider<-riogWQOTOWI_both %>% 
+  select(ActivityStartDate, CharacteristicName, ResultMeasureValue) %>% 
+  group_by(ActivityStartDate, CharacteristicName) %>% 
+  summarise(Value=max(ResultMeasureValue)) %>% 
+  pivot_wider(names_from = CharacteristicName, values_from = Value) %>% 
+  drop_na()%>% 
+  rename("Phosphorus_mg.L"="Phosphorus", "SuspendedSedimentConcentration_mg.L"="Suspended Sediment Concentration (SSC)")
+```
+
+```{r COCHITI PH read in data and wrangle}
+rioParamsCOCHITI <- whatNWISdata(siteNumbers = "08317400")
+
+riogWCOCHITI_all <- readWQPqw(siteNumbers = "USGS-08317400", # RIO GRANDE COCHITI DAM, NM
+                     parameterCd = c(""),
+                     startDate = "1980-01-01",
+                     endDate = "")
+
+unique(riogWCOCHITI_all$CharacteristicName)
+
+as.numeric(riogWCOCHITI_all$ResultMeasureValue)
+
+riogWCOCHITI_all<-riogWCOCHITI_all %>% 
+  filter(ResultMeasure.MeasureUnitCode!="%")
+
+
+riogWQCOCHITII_PH<-riogWCOCHITI_all %>%
+  filter(CharacteristicName=="Phosphorus") %>% 
+  mutate(Variable = case_when(CharacteristicName == "Phosphorus" ~ "Phosphorus_mg.L"))
+
+riogWQCOCHITII_SS<-riogWCOCHITI_all %>%
+  filter(CharacteristicName=="Suspended Sediment Concentration (SSC)")
+
+riogWQCOCHITII_both<-riogWCOCHITI_all %>%
+  filter(CharacteristicName=="Suspended Sediment Concentration (SSC)"|CharacteristicName=="Phosphorus")
+
+riogWQCOCHITI_PH_wider<-riogWQCOCHITII_PH %>% 
+  select(ActivityStartDate, CharacteristicName, ResultMeasureValue) %>% 
+  group_by(ActivityStartDate, CharacteristicName) %>% 
+  summarise(Value=max(ResultMeasureValue)) %>% 
+  pivot_wider(names_from = CharacteristicName, values_from = Value) %>% 
+    drop_na() %>% 
+  rename("Phosphorus_mg.L"="Phosphorus")
+
+riogWQCOCHITII_SS_wider<-riogWQCOCHITII_SS %>% 
+  select(ActivityStartDate, CharacteristicName, ResultMeasureValue) %>% 
+  group_by(ActivityStartDate, CharacteristicName) %>% 
+  summarise(Value=max(ResultMeasureValue)) %>% 
+  pivot_wider(names_from = CharacteristicName, values_from = Value) %>% 
+    drop_na() %>% 
+  rename(SuspendedSedimentConcentration_mg.L="Suspended Sediment Concentration (SSC)")
+
+riogWQCOCHITI_wider_combined<-left_join(riogWQCOCHITI_PH_wider, riogWQCOCHITII_SS_wider, by="ActivityStartDate")%>%
+  drop_na()
+
+riogWQCOCHITII_both_wider<-riogWQCOCHITII_both %>% 
+  select(ActivityStartDate, CharacteristicName, ResultMeasureValue) %>% 
+  group_by(ActivityStartDate, CharacteristicName) %>% 
+  summarise(Value=max(ResultMeasureValue)) %>% 
+  pivot_wider(names_from = CharacteristicName, values_from = Value) %>% 
+    drop_na() %>% 
+  rename(Phosphorus_mg.L="Phosphorus", SuspendedSedimentConcentration_mg.L="Suspended Sediment Concentration (SSC)")
+
+```
+
+```{r Discharge wrangle and combine}
+# RIO GRANDE NEAR LOBATOS, CO
+riogDischarge_LOBATOS <- readNWISdv(siteNumbers = "08251500",
+                     parameterCd = "00060", # code for discharge (ft3/s)
+                     startDate = "1980-10-01", 
+                     endDate = "2021-09-30") #complete water years
+
+names(riogDischarge_LOBATOS)[4:5] <- c("Discharge", "Approval.Code")
+
+riogDischarge_LOBATOS_processed <- riogDischarge_LOBATOS %>%
+  select(Date, Discharge) %>%
+  filter(Date >= min(riogWQLobatos_PH_wider$ActivityStartDate) & 
+           Date <= max(riogWQLobatos_PH_wider$ActivityStartDate))%>% 
+  rename(Discharge_cfs="Discharge")
+
+riogWQLobatos_PH_wider<-riogWQLobatos_PH_wider %>% 
+  rename(Date="ActivityStartDate")
+
+LOBATOS_processed <- riogDischarge_LOBATOS_processed %>%
+  left_join(., riogWQLobatos_PH_wider, by="Date") %>%
+  mutate(Year = year(Date), 
+         Month = month(Date), 
+         DOY = yday(Date),) %>% 
+  drop_na()
+
+LOBATOS_processed$Phosphorus_mg.L<-as.numeric(LOBATOS_processed$Phosphorus_mg.L)
+
+LOBATOS_long <- LOBATOS_processed %>%
+  pivot_longer(cols = "Discharge_cfs":"Phosphorus_mg.L",
+               names_to = "Variable", values_to = "Value") %>%
+  drop_na()
+
+write.csv(LOBATOS_processed,"../Data/Processed/LOBATOS_processed.csv", row.names = TRUE)
+write.csv(LOBATOS_long,"../Data/Processed/LOBATOS_long.csv", row.names = TRUE)
+
+# RIO GRANDE OTOWI BRIDGE, NM
+riogDischarge_OTOWI <- readNWISdv(siteNumbers = "08313000",
+                     parameterCd = "00060", # code for discharge (ft3/s)
+                     startDate = "1980-10-01", 
+                     endDate = "2021-09-30") #complete water years
+
+names(riogDischarge_OTOWI)[4:5] <- c("Discharge", "Approval.Code")
+
+riogWQOTOWI_SS_wider<-riogWQOTOWI_SS_wider %>% 
+  rename(Date="ActivityStartDate")
+
+riogDischarge_OTOWI_processed <- riogDischarge_OTOWI %>%
+  select(Date, Discharge) %>%
+  filter(Date >= min(riogWQOTOWI_SS_wider$Date) & 
+           Date <= max(riogWQOTOWI_SS_wider$Date))%>% 
+  rename(Discharge_cfs="Discharge")
+
+OTOWI_processed <- riogDischarge_OTOWI_processed %>%
+  left_join(., riogWQOTOWI_SS_wider, by="Date") %>%
+  mutate(Year = year(Date), 
+         Month = month(Date), 
+         DOY = yday(Date),) %>% 
+  drop_na()
+
+OTOWI_processed$SuspendedSedimentConcentration_mg.L<-as.numeric(OTOWI_processed$SuspendedSedimentConcentration_mg.L)
+
+OTOWI_long <- OTOWI_processed %>%
+  pivot_longer(cols = "Discharge_cfs":"SuspendedSedimentConcentration_mg.L",
+               names_to = "Variable", values_to = "Value") %>%
+  drop_na()
+
+write.csv(OTOWI_processed,"../Data/Processed/OTOWI_processed.csv", row.names = TRUE)
+write.csv(OTOWI_long,"../Data/Processed/OTOWI_long.csv", row.names = TRUE)
+
+# RIO GRANDE COCHITI DAM, NM
+riogDischarge_COCHITI <- readNWISdv(siteNumbers = "08317400",
+                     parameterCd = "00060", # code for discharge (ft3/s)
+                     startDate = "1980-10-01", 
+                     endDate = "2021-09-30") #complete water years
+
+names(riogDischarge_COCHITI)[4:5] <- c("Discharge", "Approval.Code")
+
+riogDischarge_COCHITI_processed <- riogDischarge_COCHITI %>%
+  select(Date, Discharge) %>%
+  filter(Date >= min(riogWQCOCHITII_both_wider$ActivityStartDate) & 
+           Date <= max(riogWQCOCHITII_both_wider$ActivityStartDate)) %>% 
+  rename(Discharge_cfs="Discharge")
+
+riogWQCOCHITII_both_wider<-riogWQCOCHITII_both_wider %>% 
+  rename(Date="ActivityStartDate")
+
+COCHITI_processed <- riogDischarge_COCHITI_processed %>%
+  left_join(., riogWQCOCHITII_both_wider, by="Date") %>%
+  mutate(Year = year(Date), 
+         Month = month(Date), 
+         DOY = yday(Date),) %>% 
+  drop_na()
+
+COCHITI_processed$SuspendedSedimentConcentration_mg.L<-as.numeric(COCHITI_processed$SuspendedSedimentConcentration_mg.L)
+COCHITI_processed$Phosphorus_mg.L<-as.numeric(COCHITI_processed$Phosphorus_mg.L)
+
+COCHITI_long <- COCHITI_processed %>%
+  pivot_longer(cols = "Discharge_cfs":"Phosphorus_mg.L",
+               names_to = "Variable", values_to = "Value") %>%
+  drop_na()
+
+write.csv(COCHITI_processed,"../Data/Processed/COCHITI_processed.csv", row.names = TRUE)
+write.csv(COCHITI_long,"../Data/Processed/COCHITI_long.csv", row.names = TRUE)
+```

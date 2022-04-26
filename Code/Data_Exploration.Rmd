@@ -1,0 +1,73 @@
+---
+title: "Data_Exploration"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+getwd()
+
+library(tidyverse)
+library(lubridate)
+library(dataRetrieval)
+
+theme_set(theme_classic())
+options(scipen = 4) #sets the number of decimal places that appear in output
+```
+
+
+```{r read in data}
+LOBATOS_processed<-read.csv("../Data/Processed/LOBATOS_processed.csv")
+LOBATOS_long<-read.csv("../Data/Processed/LOBATOS_long.csv")
+
+OTOWI_processed<-read.csv("../Data/Processed/OTOWI_processed.csv")
+OTOWI_long<-read.csv("../Data/Processed/OTOWI_long.csv")
+
+COCHITI_processed<-read.csv("../Data/Processed/COCHITI_processed.csv")
+COCHITI_long<-read.csv("../Data/Processed/COCHITI_long.csv")
+```
+
+```{r discharge flow summaries}
+LOBATOSFlow_summary <- LOBATOS_processed %>%
+  group_by(DOY) %>%
+  summarise(median_Flow_cfs = median(Discharge_cfs, na.rm = TRUE),
+            p25_Flow_cfs = quantile(Discharge_cfs, 0.25, na.rm = TRUE),
+            p75_Flow_cfs = quantile(Discharge_cfs, 0.75, na.rm = TRUE))
+
+write.csv(LOBATOSFlow_summary,"../Data/Processed/LOBATOSFlow_summary.csv", row.names = TRUE)
+
+OTOWIFlow_summary <- OTOWI_processed %>%
+  group_by(DOY) %>%
+  summarise(median_Flow_cfs = median(Discharge_cfs, na.rm = TRUE),
+            p25_Flow_cfs = quantile(Discharge_cfs, 0.25, na.rm = TRUE),
+            p75_Flow_cfs = quantile(Discharge_cfs, 0.75, na.rm = TRUE))
+
+write.csv(OTOWIFlow_summary,"../Data/Processed/OTOWIFlow_summary.csv", row.names = TRUE)
+
+COCHITIFlow_summary <- COCHITI_processed %>%
+  group_by(DOY) %>%
+  summarise(median_Flow_cfs = median(Discharge_cfs, na.rm = TRUE),
+            p25_Flow_cfs = quantile(Discharge_cfs, 0.25, na.rm = TRUE),
+            p75_Flow_cfs = quantile(Discharge_cfs, 0.75, na.rm = TRUE))
+
+write.csv(COCHITIFlow_summary,"../Data/Processed/COCHITIFlow_summary.csv", row.names = TRUE)
+```
+
+```{r looking at stream gauge data over time}
+ggplot(COCHITI_long, aes(x = Date, y = Value)) +
+  geom_line() +
+  facet_wrap(vars(Variable), nrow = 7, scales = "free_y") +
+  scale_y_log10() +
+  labs(x = "Date")
+
+ggplot(LOBATOS_processed, aes(x = Date, y = Phosphorus_mg.L)) +
+  geom_point() +
+  #geom_hline(yintercept = 200, lty = 2) + #EPA ____recreational criteria for freshwater
+  scale_y_log10() +
+  labs(x = "Date", y = "Phosphorus (cfu/100 mL)")
+
+ggplot(OTOWI_processed, aes(x = Date, y = SuspendedSedimentConcentration_mg.L)) +
+  geom_point() +
+  scale_y_log10() +
+  labs(x = "Date", y = expression("Suspended Sediment Concentration mg/L"))
+
+```

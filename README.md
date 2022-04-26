@@ -1,2 +1,4 @@
 # vonTurkovich_WDA_Project
 ENVIRON 790 - WDA Final Project - Rio Grande Analysis
+
+This is a project for Duke's Water Data Analytics Course (WDA) course number ENVIRON 790. For this project we are generating a set of research questions or an overarching question with sub-questions that can be answered using data from a data set we have identified. I have chosen to analysis USGS data on the Rio Grande River in Southern Colorado and New Mexico. There has been a recent effort to restore and protect the headwaters of the Rio Grande with the aims of improving water quality down stream. My analysis will look at water data on the Rio grande, comparing the data before the restoration projects were implemented and after to see if there was an effect on the river water quality. 

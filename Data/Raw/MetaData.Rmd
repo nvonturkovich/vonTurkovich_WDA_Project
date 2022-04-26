@@ -1,0 +1,12 @@
+---
+title: "Meta Data"
+output: html_document
+---
+
+The data was for this analysis was pulled in from USGS stream water quality data using function readWQPqw, and from USGS discharge data using function readNWISdv. Data was pulled for the following three sites: 
+
+USGS-08251500, RIO GRANDE NEAR LOBATOS, CO
+
+USGS-08313000, RIO GRANDE OTOWI BRIDGE, NM
+
+USGS-08317400, RIO GRANDE COCHITI DAM, NM
